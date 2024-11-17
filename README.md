@@ -104,7 +104,7 @@ Check out more: [https://9to5mac.com/2024/11/15/apple-watch-series-10-thinner-th
 ```  
 
 **Attached Image**:  
-An elegant card featuring the news title and AI-generated summary.  
+![images](https://github.com/user-attachments/assets/9430e3c0-7f70-482b-86b5-844c50838673)
 
 ---
 
