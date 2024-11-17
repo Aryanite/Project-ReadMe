@@ -18,87 +18,113 @@ api_secret = os.getenv("TWITTER_CONSUMER_SECRET")
 access_token = os.getenv("TWITTER_ACCESS_TOKEN")
 access_token_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET")
 
-# Initialize the Generative AI API
+# Initialize Generative AI
 genai.configure(api_key=genai_api_key)
 
 # File to store fetched article URLs
 fetched_articles_file = "fetched_articles.json"
 
-# Load previously fetched article URLs from the file
-if os.path.exists(fetched_articles_file):
-    with open(fetched_articles_file, "r") as file:
+# Load previously fetched URLs
+def load_fetched_articles():
+    if os.path.exists(fetched_articles_file):
         try:
-            fetched_urls = set(json.load(file))  # Safely load URLs
-        except json.JSONDecodeError:
-            fetched_urls = set()  # Handle file corruption or empty file
-else:
-    fetched_urls = set()
+            with open(fetched_articles_file, "r") as file:
+                return set(json.load(file))
+        except (json.JSONDecodeError, IOError):
+            print("Corrupted fetched articles file. Resetting...")
+    return set()
 
-# Set up the News API endpoint and parameters
-url = "https://newsapi.org/v2/top-headlines"
-params = {
-    'country': 'us',
-    'category': 'technology',
-    'apiKey': news_api_key
-}
+# Save fetched URLs
+def save_fetched_articles(fetched_urls):
+    try:
+        with open(fetched_articles_file, "w") as file:
+            json.dump(list(fetched_urls), file)
+    except IOError as e:
+        print(f"Failed to save fetched articles. Error: {e}")
 
-# Set up the Generative AI model configuration
-generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
-  "top_k": 40,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
-}
+# Count words in a string
+def count_words(text):
+    return len(text.split())
 
-model = genai.GenerativeModel(
-  model_name="tunedModels/newsx-xjuj5pke9bxg",
-  generation_config=generation_config,
-)
+# Generate a response and refine if needed
+def generate_response(chat_session, text):
+    response = chat_session.send_message(text)
+    ai_response = response.text
+    word_count = count_words(ai_response)
+
+    print(f"Initial AI Response ({word_count} words): {ai_response}")
+
+    # Refine response if it exceeds 70 words
+    if word_count > 70:
+        prompt = f"The response exceeds 70 words. Please rewrite it to be concise, with fewer than 60 words."
+        refined_response = chat_session.send_message(prompt)
+        ai_response = refined_response.text
+        print(f"Refined AI Response: {ai_response}")
+
+    return ai_response
 
 # Fetch the latest articles from News API
-response = requests.get(url, params=params)
-if response.status_code == 200:
-    data = response.json()
-    articles = data.get("articles", [])
+def fetch_articles():
+    url = "https://newsapi.org/v2/top-headlines"
+    params = {
+        'country': 'us',
+        'category': 'technology',
+        'apiKey': news_api_key
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json().get("articles", [])
+    else:
+        print(f"Failed to fetch articles. Status code: {response.status_code}")
+        return []
 
-    # Process the first unique technology article
-    unique_article_found = False  # Flag to check if a unique article is found
+# Main script logic
+def main():
+    fetched_urls = load_fetched_articles()
+    articles = fetch_articles()
+
+    if not articles:
+        print("No articles found.")
+        return
+
+    unique_article_found = False
+
     for article in articles:
-        if article['url'] not in fetched_urls:  # Check if the article is already fetched
-            fetched_urls.add(article['url'])  # Add it to the set of fetched URLs
-            unique_article_found = True  # Mark as unique article found
+        if article['url'] not in fetched_urls:
+            fetched_urls.add(article['url'])
+            unique_article_found = True
 
-            # Try to download and parse the article
             try:
+                # Parse the article
                 news_article = Article(article['url'])
                 news_article.download()
                 news_article.parse()
 
-                # Pass full article text to the Generative AI model
+                # Start a Generative AI session
+                model = genai.GenerativeModel(
+                    model_name="tunedModels/newsx-xjuj5pke9bxg"
+                )
                 chat_session = model.start_chat(history=[])
-                response = chat_session.send_message(news_article.text)
 
-                # Display the response from the Generative AI model
+                # Generate response and refine if needed
+                ai_summary = generate_response(chat_session, news_article.text)
                 print(f"Title: {article['title']}")
-                print(f"Full Text: {news_article.text}\n")
-                print("AI Model Response:", response.text)
+                print(f"Summary: {ai_summary}")
+                global title, summary
                 title = article['title']
-                summary = response.text
-                # Stop after processing the first unique article
-                break
+                summary = ai_summary
+                break  # Process only the first unique article
 
             except Exception as e:
-                print(f"Failed to retrieve full text for article: {article['title']}\nError: {e}")
+                print(f"Failed to process article: {article['title']}\nError: {e}")
 
-    # Update the list of fetched articles only if a new article was found
     if unique_article_found:
-        with open(fetched_articles_file, "w") as file:
-            json.dump(list(fetched_urls), file)
+        save_fetched_articles(fetched_urls)
     else:
         print("No new unique articles found.")
-else:
-    print("Failed to fetch articles. Status code:", response.status_code)
+
+if __name__ == "__main__":
+    main()
 
 # Text and Image Handling (No changes here)
 def draw_rounded_rectangle(width, height, corner_radius, fill_color, outline_color, outline_width):
@@ -193,6 +219,7 @@ draw_text_on_image(base_image, summary, summary_font, max_text_width, max_text_h
 
 # Save the modified image
 base_image.save("output.png")
+
 
 # Twitter API setup (v1.1 and v2.0)
 def get_twitter_conn_v1(api_key, api_secret, access_token, access_token_secret) -> tweepy.API:
