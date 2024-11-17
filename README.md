@@ -104,7 +104,7 @@ Check out more: [https://9to5mac.com/2024/11/15/apple-watch-series-10-thinner-th
 ```  
 
 **Attached Image**:  
-![Gclt3ocaEAA7-ad](https://github.com/user-attachments/assets/e31f23cc-4cb5-48a3-b259-2d04c6abe627)
+![tweet](https://github.com/user-attachments/assets/a823f5b5-1a0a-4e7d-88b1-f6da8e935044)
 
 ---
 
