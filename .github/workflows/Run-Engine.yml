@@ -2,7 +2,7 @@ name: Run Engine Script
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Runs every hour at the start of the hour
+    - cron: '0 */2 * * *'  # Runs every 2 hours at the start of the hour
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
