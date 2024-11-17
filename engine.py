@@ -76,7 +76,6 @@ def fetch_articles():
         return response.json().get("articles", [])
     else:
         print(f"Failed to fetch articles. Status code: {response.status_code}")
-        print("Error details:", response.text)  # Print more error details
         return []
 
 # Main script logic
