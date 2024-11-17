@@ -19,7 +19,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: fetched-articles
-        path: .
+        path: . 
       continue-on-error: true  # Allow workflow to continue even if no artifact is found
 
     # Set up Python environment
@@ -46,9 +46,8 @@ jobs:
       run: |
         python engine.py
 
-    # Save fetched_articles.json as an artifact after script execution
+    # Save fetched_articles.json as an artifact after script execution, even if not successful
     - name: Upload fetched_articles.json artifact
-      if: success()  # Only save if the script runs successfully
       uses: actions/upload-artifact@v3
       with:
         name: fetched-articles
