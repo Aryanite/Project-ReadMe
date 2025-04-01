@@ -10,31 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Checkout the repository code
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Try to restore fetched_articles.json artifact, but handle the case where it does not exist
+    # Restore fetched_articles.json artifact (if available)
     - name: Restore fetched_articles.json artifact (if available)
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: fetched-articles
-        path: . 
+        path: .
       continue-on-error: true  # Allow workflow to continue even if no artifact is found
 
-    # Set up Python environment
     - name: Set up Python 3.10
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    # Install dependencies
     - name: Install dependencies
       run: |
         pip install --upgrade pip
         pip install -r requirements.txt
 
-    # Run engine script
     - name: Run engine script
       env:
         NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
@@ -46,9 +42,9 @@ jobs:
       run: |
         python engine.py
 
-    # Save fetched_articles.json as an artifact after script execution, even if not successful
     - name: Upload fetched_articles.json artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: fetched-articles
         path: fetched_articles.json
+        include-hidden-files: true  # Include hidden files if necessary
