@@ -8,6 +8,7 @@ import tweepy
 
 # Global variables for title and summary
 global title
+
 global summary
 
 # Configure API keys from environment variables
